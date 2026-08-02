@@ -1,5 +1,6 @@
-from fastapi import APIRouter, Depends, HTTPException, Response
+from fastapi import APIRouter, Depends, Response
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from core.exceptions import DomainError, UnauthorizedError, ResourceNotFoundError
 from sqlalchemy.orm import Session
 from pydantic import BaseModel, Field, EmailStr
 
@@ -33,10 +34,10 @@ def get_current_user(
 ) -> User:
     payload = decode_token(credentials.credentials, expected_type="access")
     if not payload:
-        raise HTTPException(status_code=401, detail="Invalid or expired token")
+        raise UnauthorizedError("Invalid or expired token")
     user = db.query(User).filter(User.id == payload.get("user_id")).first()
     if not user:
-        raise HTTPException(status_code=401, detail="User not found")
+        raise UnauthorizedError("User not found")
     return user
 
 def set_refresh_cookie(response: Response, refresh_token: str):
@@ -52,9 +53,9 @@ def set_refresh_cookie(response: Response, refresh_token: str):
 @router.post("/register", response_model=TokenResponse)
 async def register(req: RegisterRequest, response: Response, db: Session = Depends(get_db)):
     if db.query(User).filter(User.email == req.email).first():
-        raise HTTPException(status_code=400, detail="Email already registered")
+        raise DomainError("Email already registered")
     if db.query(User).filter(User.username == req.username).first():
-        raise HTTPException(status_code=400, detail="Username already taken")
+        raise DomainError("Username already taken")
     
     from providers.firebase.firebase_rest import firebase_client
     await firebase_client.register(req.email, req.password)
@@ -79,7 +80,7 @@ async def login(req: LoginRequest, response: Response, db: Session = Depends(get
     
     user = db.query(User).filter(User.email == req.email).first()
     if not user:
-        raise HTTPException(status_code=401, detail="Invalid email or password")
+        raise UnauthorizedError("Invalid email or password")
         
     token = create_access_token({"user_id": user.id, "username": user.username})
     refresh_token = create_refresh_token({"user_id": user.id, "username": user.username})
@@ -100,14 +101,14 @@ async def google_login(req: GoogleLoginRequest, response: Response, db: Session 
         data = resp.json()
         
         if not resp.is_success or "users" not in data or len(data["users"]) == 0:
-            raise HTTPException(status_code=401, detail="Invalid Google token")
+            raise UnauthorizedError("Invalid Google token")
             
         google_user = data["users"][0]
         email = google_user.get("email")
         display_name = google_user.get("displayName", "User")
         
         if not email:
-            raise HTTPException(status_code=400, detail="Google account has no email")
+            raise DomainError("Google account has no email")
             
         user = db.query(User).filter(User.email == email).first()
         
@@ -142,15 +143,15 @@ async def google_login(req: GoogleLoginRequest, response: Response, db: Session 
 def refresh_access_token(request: __import__('fastapi').Request, db: Session = Depends(get_db)):
     refresh_token = request.cookies.get("refresh_token")
     if not refresh_token:
-        raise HTTPException(status_code=401, detail="Refresh token missing")
+        raise UnauthorizedError("Refresh token missing")
         
     payload = decode_token(refresh_token, expected_type="refresh")
     if not payload:
-        raise HTTPException(status_code=401, detail="Invalid or expired refresh token")
+        raise UnauthorizedError("Invalid or expired refresh token")
         
     user = db.query(User).filter(User.id == payload.get("user_id")).first()
     if not user:
-        raise HTTPException(status_code=401, detail="User not found")
+        raise UnauthorizedError("User not found")
         
     new_token = create_access_token({"user_id": user.id, "username": user.username})
     return TokenResponse(access_token=new_token, username=user.username)

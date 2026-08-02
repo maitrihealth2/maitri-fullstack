@@ -33,7 +33,18 @@ class SecurityMiddleware(BaseHTTPMiddleware):
                 pass
         
         # 2. Rate Limiting
-        client_ip = request.client.host if request.client else "unknown"
+        # In a proxied setup (Nginx), request.client.host is the internal Docker IP
+        # We must use X-Forwarded-For or X-Real-IP
+        forwarded_for = request.headers.get("x-forwarded-for")
+        real_ip = request.headers.get("x-real-ip")
+        
+        if forwarded_for:
+            client_ip = forwarded_for.split(",")[0].strip()
+        elif real_ip:
+            client_ip = real_ip
+        else:
+            client_ip = request.client.host if request.client else "unknown"
+            
         path = request.url.path
         
         current_time = time.time()
@@ -62,9 +73,8 @@ class SecurityMiddleware(BaseHTTPMiddleware):
         response = await call_next(request)
         
         # 4. Inject Security Headers
+        # We only inject HSTS here; Nginx handles X-Frame-Options and XSS Protection.
         response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
-        response.headers["X-Content-Type-Options"] = "nosniff"
-        response.headers["X-Frame-Options"] = "DENY"
-        response.headers["X-XSS-Protection"] = "1; mode=block"
+        
         
         return response

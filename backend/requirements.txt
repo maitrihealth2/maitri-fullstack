@@ -6,6 +6,7 @@ bcrypt==4.2.0
 passlib[argon2]==1.7.4
 python-multipart==0.0.9
 pydantic==2.9.2
+email-validator
 aiofiles==24.1.0
 openai==1.47.0
 python-jose[cryptography]==3.3.0
@@ -44,9 +45,5 @@ nltk
 ytmusicapi==1.12.1
 yt-dlp==2026.7.4
 
-PyMuPDF
 python-docx
-langchain-text-splitters
-pydantic-settings>=2.5.2
 loguru>=0.7.2
-gunicorn==21.2.0

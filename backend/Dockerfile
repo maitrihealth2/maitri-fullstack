@@ -1,8 +1,11 @@
 FROM python:3.12-slim
 
+# Copy uv from the official image
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /bin/uv
+
 WORKDIR /app
 
-# System deps some ML libs need (skip if you don't need them)
+# System deps some ML libs need
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     curl \
@@ -10,16 +13,17 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libsndfile1 \
     && rm -rf /var/lib/apt/lists/*
 
-# Install PyTorch CPU first to avoid 5GB bloat
-RUN pip install --no-cache-dir torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu
+# Install PyTorch CPU first to avoid 5GB bloat using uv
+RUN uv pip install --system --no-cache torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu
 
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt --extra-index-url https://download.pytorch.org/whl/cpu
+# Use uv for extremely fast package resolution and installation
+RUN uv pip install --system --no-cache -r requirements.txt --extra-index-url https://download.pytorch.org/whl/cpu
 
 # Pre-download NLTK data required by rouge-score / tokenizers
 RUN python -c "import nltk; nltk.download('punkt'); nltk.download('punkt_tab')"
 
 COPY . .
 
-# Use Gunicorn as the process manager to balance load across multiple Uvicorn workers natively
-CMD gunicorn app:app --workers 4 --worker-class uvicorn.workers.UvicornWorker --bind 0.0.0.0:${PORT:-8000} --timeout 120
+# Use the unified Python runner
+CMD ["python", "main.py"]

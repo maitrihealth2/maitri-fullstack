@@ -2,8 +2,9 @@ import uuid
 import asyncio
 import re
 from datetime import datetime
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
+from core.exceptions import ResourceNotFoundError
 from pydantic import BaseModel
 
 from core.database.models import get_db, Session as DBSession, Message, MessageEmotion, RiskLog, User, ExerciseLog, UserPersonaProfile, UserOnboarding
@@ -137,7 +138,7 @@ async def send_message(
         DBSession.user_id == current_user.id,
     ).first()
     if not session:
-        raise HTTPException(status_code=404, detail="Session not found")
+        raise ResourceNotFoundError("Session")
 
     # ── Telemetry ────────────────────────────────────────────────────────────
     asyncio.create_task(broadcast_event("TEXT_START", "Client Keyboard -> FastAPI", {"text": req.message}))
@@ -466,7 +467,7 @@ def get_transcript(
         DBSession.user_id == current_user.id,
     ).first()
     if not session:
-        raise HTTPException(status_code=404, detail="Session not found")
+        raise ResourceNotFoundError("Session")
     return {
         "session_id":       session_id,
         "started_at":       session.started_at,

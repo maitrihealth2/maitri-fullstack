@@ -152,7 +152,7 @@ app.include_router(telemetry_router)
 app.include_router(feedback_router)
 app.include_router(profile_router)
 
-from modules.src.features.feature_flags.api import router as features_router
+from modules.feature_flags.api import router as features_router
 app.include_router(features_router)
 
 
@@ -164,7 +164,7 @@ async def favicon():
     from fastapi import Response
     return Response(status_code=204)
 
-@app.get("/health")
+@app.head("/health")
 def health():
     return {
         "status": "ok",
@@ -188,11 +188,3 @@ import os
 telemetry_dir = os.path.join(os.path.dirname(__file__), "modules", "telemetry_ui")
 if os.path.exists(telemetry_dir):
     app.mount("/telemetry_ui", StaticFiles(directory=telemetry_dir, html=True), name="telemetry_ui")
-
-@app.get("/architecture", response_class=HTMLResponse)
-def architecture_view():
-    path = os.path.join(os.path.dirname(__file__), "architecture_flow.html")
-    if os.path.exists(path):
-        with open(path, "r", encoding="utf-8") as f:
-            return f.read()
-    return "<html><body><h2>MindBridge Architecture Flow</h2><p>Architecture diagram file not found.</p></body></html>"
