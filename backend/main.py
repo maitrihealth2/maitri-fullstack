@@ -21,11 +21,11 @@ if __name__ == "__main__":
             workers = max(1, int(web_concurrency))
             print(f"[RUNNER] WEB_CONCURRENCY detected. Starting {workers} worker(s).")
         except ValueError:
-            workers = min((cores * 2) + 1, 8)
-            print(f"[RUNNER] Invalid WEB_CONCURRENCY value. Falling back to {workers} worker(s).")
+            workers = 1
+            print("[RUNNER] Invalid WEB_CONCURRENCY value. Falling back to 1 worker.")
     else:
-        workers = min((cores * 2) + 1, 8)
-        print(f"[RUNNER] Production mode. Detected {cores} CPU cores. Starting {workers} workers.")
+        workers = 1
+        print(f"[RUNNER] No WEB_CONCURRENCY set. Defaulting to 1 worker for container stability.")
         
     print(f"[RUNNER] Starting Uvicorn Server on port {port}...")
 
