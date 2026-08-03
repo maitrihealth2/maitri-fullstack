@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import { Literata } from 'next/font/google'
 import Script from 'next/script'
+import { Analytics } from '@vercel/analytics/next'
 import { Providers } from '@/core/providers'
 import BottomNav from '@/shared/components/BottomNav'
 import GlobalShortcuts from '@/shared/components/GlobalShortcuts'
@@ -50,6 +51,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           {children}
         </Providers>
         <BottomNav />
+        <Analytics />
       </body>
     </html>
   )
