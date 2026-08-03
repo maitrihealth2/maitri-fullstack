@@ -173,6 +173,24 @@ def health():
         "ai": "sarvam-105b + saarika + bulbul",
     }
 
+@app.api_route("/ready", methods=["GET", "HEAD"], include_in_schema=False)
+def readiness():
+    unhealthy = [component for component, status in CommandCenter.health_status.items() if status != "Healthy"]
+    if unhealthy:
+        return JSONResponse(
+            status_code=503,
+            content={
+                "status": "not_ready",
+                "unhealthy_components": unhealthy,
+                "health": CommandCenter.health_status,
+            },
+        )
+
+    return {
+        "status": "ready",
+        "health": CommandCenter.health_status,
+    }
+
 
 @app.get("/")
 def root():

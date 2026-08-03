@@ -19,4 +19,5 @@ RUN python -m pip install --no-cache-dir -r requirements.txt
 COPY . .
 EXPOSE 8000
 ENV PORT=8000
+ENV RAG_AUTO_BUILD=true
 CMD ["python", "main.py"]

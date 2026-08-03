@@ -124,6 +124,17 @@ class _CommandCenter:
         except Exception as e:
             print(f"[LOG_AI_ERROR] {e}")
 
+    def log_info(self, message: str):
+        try:
+            self._check_snapshot()
+            text = Text()
+            text.append(f"[{self._ts()}] ", style="dim")
+            text.append(f"INFO", style="bold blue")
+            text.append(f" {message}")
+            console.print(text)
+        except Exception as e:
+            print(f"[LOG_INFO_ERROR] {e}")
+
     def log_error(self, msg: str, exc: Exception = None):
         self._check_snapshot()
         
