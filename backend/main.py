@@ -9,13 +9,20 @@ if __name__ == "__main__":
     
     port = int(os.environ.get("PORT", 8000))
     env = os.environ.get("ENVIRONMENT", "production")
+    web_concurrency = os.environ.get("WEB_CONCURRENCY")
     
     # Calculate optimal workers for I/O bound tasks
     cores = multiprocessing.cpu_count()
-    
     if env == "development":
         workers = 1
         print("[RUNNER] Development mode detected. Starting 1 worker.")
+    elif web_concurrency:
+        try:
+            workers = max(1, int(web_concurrency))
+            print(f"[RUNNER] WEB_CONCURRENCY detected. Starting {workers} worker(s).")
+        except ValueError:
+            workers = min((cores * 2) + 1, 8)
+            print(f"[RUNNER] Invalid WEB_CONCURRENCY value. Falling back to {workers} worker(s).")
     else:
         workers = min((cores * 2) + 1, 8)
         print(f"[RUNNER] Production mode. Detected {cores} CPU cores. Starting {workers} workers.")
