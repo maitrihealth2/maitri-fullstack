@@ -45,6 +45,10 @@ def retrieve_context(query: str, n_results: int = 3) -> str:
     Returns a formatted string ready to inject into the LLM prompt.
     """
     try:
+        if not is_knowledge_base_ready():
+            print("[RAG] retrieve_context called but knowledge base is not ready.")
+            return ""
+
         collection = get_collection()
         if collection is None:
             return ""

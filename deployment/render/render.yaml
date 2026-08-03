@@ -8,8 +8,8 @@ services:
     region: oregon
     buildCommand: cd backend && pip install --no-cache-dir -r requirements.txt
     startCommand: cd backend && python main.py
-    healthCheckPath: /ready
-    instanceCount: 2
+    healthCheckPath: /up
+    instanceCount: 1
     envVars:
       - key: PYTHON_VERSION
         value: 3.12.0

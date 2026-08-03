@@ -21,11 +21,12 @@ from modules.dashboard.api import broadcast_event
 
 try:
     from rag.knowledge.retriever import retrieve_context, is_knowledge_base_ready
-    RAG_AVAILABLE = is_knowledge_base_ready()
 except Exception as e:
     logger.warning(f"[RAG] Not available: {e}")
-    RAG_AVAILABLE = False
-    def retrieve_context(query, n_results=3): return ""
+    def retrieve_context(query, n_results=3):
+        return ""
+    def is_knowledge_base_ready():
+        return False
 
 class ConsultationService:
     def __init__(self, repository: ConsultationRepository):

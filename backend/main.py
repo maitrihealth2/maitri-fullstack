@@ -1,11 +1,6 @@
 import uvicorn
 import os
 
-try:
-    from rag.knowledge.retriever import ensure_knowledge_base_ready
-except Exception:
-    ensure_knowledge_base_ready = None
-
 if __name__ == "__main__":
     print("=============================================")
     print("   MindBridge Unified Backend Runner         ")
@@ -26,17 +21,6 @@ if __name__ == "__main__":
     else:
         print("[RUNNER] No WEB_CONCURRENCY set. Running single-process server for container stability.")
 
-    if ensure_knowledge_base_ready:
-        rag_auto_build = os.getenv("RAG_AUTO_BUILD", "false").lower() in {"1", "true", "yes"}
-        if ensure_knowledge_base_ready(build_if_missing=rag_auto_build):
-            print("[RAG] Knowledge base is ready.")
-        elif rag_auto_build:
-            print("[RAG] Knowledge base auto-build failed. RAG fallback mode enabled.")
-        else:
-            print("[RAG] Knowledge base is not ready. RAG fallback mode enabled.")
-    else:
-        print("[RAG] RAG retriever import failed. Skipping knowledge base initialization.")
-        
     print(f"[RUNNER] Starting Uvicorn Server on port {port}...")
 
     uvicorn.run(

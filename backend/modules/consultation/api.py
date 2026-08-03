@@ -21,16 +21,13 @@ from modules.dashboard.api import broadcast_event
 from core.logger.terminal import CommandCenter
 
 try:
-    from rag.knowledge.retriever import retrieve_context, ensure_knowledge_base_ready
-    RAG_AVAILABLE = ensure_knowledge_base_ready(build_if_missing=True)
-    if RAG_AVAILABLE:
-        print("[RAG] Knowledge base loaded")
-    else:
-        print("[RAG] Knowledge base not ready; falling back to heuristic retrieval.")
+    from rag.knowledge.retriever import retrieve_context, is_knowledge_base_ready
 except Exception as e:
     print(f"[RAG] Not available: {e}")
-    RAG_AVAILABLE = False
-    def retrieve_context(query, n_results=3): return ""
+    def retrieve_context(query, n_results=3):
+        return ""
+    def is_knowledge_base_ready():
+        return False
 
 router = APIRouter(prefix="/api/consultation", tags=["consultation"])
 
@@ -187,7 +184,10 @@ async def send_message(
     persona_summary = get_persona_summary(db, current_user.id)
 
     # ── RAG ──────────────────────────────────────────────────────────────────
-    rag_context = retrieve_context(req.message) if RAG_AVAILABLE else ""
+    if is_knowledge_base_ready():
+        rag_context = retrieve_context(req.message)
+    else:
+        rag_context = ""
     lang_prompt = get_language_prompt(req.language)
 
     # ── Emotion Detection ─────────────────────────────────────────────────────

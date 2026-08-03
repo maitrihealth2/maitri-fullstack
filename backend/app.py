@@ -67,10 +67,32 @@ async def lifespan(app: FastAPI):
         progress.update(task3, advance=50)
         # Defer heavy model loading until first use to avoid startup worker bloat.
         CommandCenter.log_info("Deferred model loading for emotion detection until first request.")
+
+        # If configured, build the RAG knowledge base in the background so the app can bind quickly.
+        if os.getenv("RAG_AUTO_BUILD", "false").lower() in {"1", "true", "yes"}:
+            try:
+                from rag.knowledge.retriever import ensure_knowledge_base_ready, is_knowledge_base_ready
+                if not is_knowledge_base_ready():
+                    CommandCenter.log_info("RAG knowledge base missing. Starting background build.")
+                    CommandCenter.set_health("Brain", "Starting")
+
+                    async def background_rag_build():
+                        success = await asyncio.to_thread(ensure_knowledge_base_ready, True)
+                        CommandCenter.set_health("Brain", "Healthy" if success else "Failed")
+                        CommandCenter.log_info("RAG background build completed." if success else "RAG background build failed.")
+
+                    asyncio.create_task(background_rag_build())
+                else:
+                    CommandCenter.set_health("Brain", "Healthy")
+            except Exception as e:
+                CommandCenter.log_error(f"RAG background build setup failed: {e}")
+                CommandCenter.set_health("Brain", "Failed")
+        else:
+            CommandCenter.set_health("Brain", "Healthy")
+
         # Assume providers are healthy for now
         CommandCenter.set_health("Firebase", "Healthy")
         CommandCenter.set_health("Sarvam", "Healthy")
-        CommandCenter.set_health("Brain", "Healthy")
         progress.update(task3, completed=100)
         
         progress.update(task1, completed=100)
@@ -189,6 +211,15 @@ def readiness():
     return {
         "status": "ready",
         "health": CommandCenter.health_status,
+    }
+
+
+@app.get("/up", include_in_schema=False)
+def up():
+    return {
+        "status": "up",
+        "service": "MindBridge API",
+        "version": "3.0.0",
     }
 
 
