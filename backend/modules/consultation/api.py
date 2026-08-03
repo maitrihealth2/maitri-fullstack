@@ -21,12 +21,12 @@ from modules.dashboard.api import broadcast_event
 from core.logger.terminal import CommandCenter
 
 try:
-    from rag.knowledge.retriever import retrieve_context, is_knowledge_base_ready
-    RAG_AVAILABLE = is_knowledge_base_ready()
+    from rag.knowledge.retriever import retrieve_context, ensure_knowledge_base_ready
+    RAG_AVAILABLE = ensure_knowledge_base_ready(build_if_missing=True)
     if RAG_AVAILABLE:
         print("[RAG] Knowledge base loaded")
     else:
-        print("[RAG] Not ready — run: python -m modules.knowledge.loader")
+        print("[RAG] Not ready — run: python -m rag.knowledge.builder or set RAG_AUTO_BUILD=true")
 except Exception as e:
     print(f"[RAG] Not available: {e}")
     RAG_AVAILABLE = False

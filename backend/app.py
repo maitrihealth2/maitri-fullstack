@@ -21,7 +21,6 @@ from modules.voice.api_streaming import router as streaming_router
 from modules.dashboard.api import router as telemetry_router
 from modules.feedback.api import router as feedback_router
 from modules.profile.api import router as profile_router
-from rag.brain.emotion_detector import preload_models
 from providers.sarvam.voice_client import close_http_client
 
 import asyncio
@@ -66,8 +65,8 @@ async def lifespan(app: FastAPI):
                     CommandCenter.set_health("Database", "Failed")
 
         progress.update(task3, advance=50)
-        # Preload models
-        preload_models()
+        # Defer heavy model loading until first use to avoid startup worker bloat.
+        CommandCenter.log_info("Deferred model loading for emotion detection until first request.")
         # Assume providers are healthy for now
         CommandCenter.set_health("Firebase", "Healthy")
         CommandCenter.set_health("Sarvam", "Healthy")
@@ -164,7 +163,7 @@ async def favicon():
     from fastapi import Response
     return Response(status_code=204)
 
-@app.head("/health")
+@app.api_route("/health", methods=["GET", "HEAD", "POST"], include_in_schema=False)
 def health():
     return {
         "status": "ok",

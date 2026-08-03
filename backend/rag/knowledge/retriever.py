@@ -17,20 +17,25 @@ def get_collection():
     """Lazy-load ChromaDB collection (singleton)."""
     global _client, _collection
     if _collection is None:
-        import chromadb
-        from chromadb.config import Settings
-        _client = chromadb.PersistentClient(
-            path=CHROMA_DIR,
-            settings=Settings(anonymized_telemetry=False)
-        )
-        from chromadb.utils import embedding_functions
-        embedding_fn = embedding_functions.SentenceTransformerEmbeddingFunction(
-            model_name="all-MiniLM-L6-v2"
-        )
-        _collection = _client.get_collection(
-            name=COLLECTION_NAME,
-            embedding_function=embedding_fn,
-        )
+        try:
+            import chromadb
+            from chromadb.config import Settings
+            from chromadb.utils import embedding_functions
+
+            _client = chromadb.PersistentClient(
+                path=CHROMA_DIR,
+                settings=Settings(anonymized_telemetry=False)
+            )
+            embedding_fn = embedding_functions.SentenceTransformerEmbeddingFunction(
+                model_name="all-MiniLM-L6-v2"
+            )
+            _collection = _client.get_collection(
+                name=COLLECTION_NAME,
+                embedding_function=embedding_fn,
+            )
+        except Exception as e:
+            print(f"[RAG] ChromaDB collection initialization failed: {e}")
+            return None
     return _collection
 
 
@@ -41,13 +46,22 @@ def retrieve_context(query: str, n_results: int = 3) -> str:
     """
     try:
         collection = get_collection()
+        if collection is None:
+            return ""
+
         results = collection.query(
             query_texts=[query],
             n_results=n_results,
         )
-        chunks = results["documents"][0]
-        sources = [m["source"] for m in results["metadatas"][0]]
-        concepts = [m.get("concept", "clinical_knowledge") for m in results["metadatas"][0]]
+        documents = results.get("documents")
+        metadatas = results.get("metadatas")
+        if not documents or not documents[0]:
+            return ""
+
+        chunks = documents[0]
+        metadata_items = metadatas[0] if metadatas and metadatas[0] else []
+        sources = [m.get("source", "unknown") for m in metadata_items]
+        concepts = [m.get("concept", "clinical_knowledge") for m in metadata_items]
 
         if not chunks:
             return ""
@@ -70,3 +84,19 @@ def is_knowledge_base_ready() -> bool:
         return os.path.exists(sqlite_file) and os.path.getsize(sqlite_file) > 1024
     except Exception:
         return False
+
+
+def ensure_knowledge_base_ready(build_if_missing: bool = False) -> bool:
+    """Verify whether the RAG knowledge base is ready, optionally building it if enabled."""
+    ready = is_knowledge_base_ready()
+    if ready:
+        return True
+
+    if build_if_missing and os.getenv("RAG_AUTO_BUILD", "false").lower() in {"1", "true", "yes"}:
+        try:
+            from .builder import build_knowledge_base
+            build_knowledge_base()
+            return is_knowledge_base_ready()
+        except Exception as e:
+            print(f"[RAG] Auto-build failed: {e}")
+    return False

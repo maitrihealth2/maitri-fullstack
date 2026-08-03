@@ -24,8 +24,8 @@ from security.authentication.api import get_current_user
 from modules.dashboard.api import broadcast_event
 
 try:
-    from rag.knowledge.retriever import retrieve_context, is_knowledge_base_ready
-    RAG_AVAILABLE = is_knowledge_base_ready()
+    from rag.knowledge.retriever import retrieve_context, ensure_knowledge_base_ready
+    RAG_AVAILABLE = ensure_knowledge_base_ready(build_if_missing=True)
 except Exception:
     RAG_AVAILABLE = False
     def retrieve_context(q, n=3): return ""

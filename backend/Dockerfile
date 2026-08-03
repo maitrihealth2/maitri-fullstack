@@ -1,11 +1,9 @@
 FROM python:3.12-slim
 
-# Copy uv from the official image
-COPY --from=ghcr.io/astral-sh/uv:latest /uv /bin/uv
-
+ENV PYTHONUNBUFFERED=1
 WORKDIR /app
 
-# System deps some ML libs need
+# System dependencies required by runtime audio and ML packages
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     curl \
@@ -13,17 +11,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libsndfile1 \
     && rm -rf /var/lib/apt/lists/*
 
-# Install PyTorch CPU first to avoid 5GB bloat using uv
-RUN uv pip install --system --no-cache torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu
-
 COPY requirements.txt .
-# Use uv for extremely fast package resolution and installation
-RUN uv pip install --system --no-cache -r requirements.txt
-
-# Pre-download NLTK data required by rouge-score / tokenizers
-RUN python -c "import nltk; nltk.download('punkt'); nltk.download('punkt_tab')"
+RUN python -m pip install --upgrade pip
+RUN python -m pip install --no-cache-dir torch --index-url https://download.pytorch.org/whl/cpu
+RUN python -m pip install --no-cache-dir -r requirements.txt
 
 COPY . .
-
-# Use the unified Python runner
+EXPOSE 8000
+ENV PORT=8000
 CMD ["python", "main.py"]
