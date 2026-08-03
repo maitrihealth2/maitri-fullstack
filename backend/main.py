@@ -27,8 +27,11 @@ if __name__ == "__main__":
         print("[RUNNER] No WEB_CONCURRENCY set. Running single-process server for container stability.")
 
     if ensure_knowledge_base_ready:
-        if ensure_knowledge_base_ready(build_if_missing=True):
+        rag_auto_build = os.getenv("RAG_AUTO_BUILD", "false").lower() in {"1", "true", "yes"}
+        if ensure_knowledge_base_ready(build_if_missing=rag_auto_build):
             print("[RAG] Knowledge base is ready.")
+        elif rag_auto_build:
+            print("[RAG] Knowledge base auto-build failed. RAG fallback mode enabled.")
         else:
             print("[RAG] Knowledge base is not ready. RAG fallback mode enabled.")
     else:

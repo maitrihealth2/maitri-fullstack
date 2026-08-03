@@ -25,6 +25,8 @@ services:
         sync: false
       - key: WEB_CONCURRENCY
         value: "1"
+      - key: RAG_AUTO_BUILD
+        value: "false"
 
   # --------------------------------------------------
   # Frontend Web Service (Next.js)

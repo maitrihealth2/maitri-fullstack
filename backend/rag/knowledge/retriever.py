@@ -87,16 +87,20 @@ def is_knowledge_base_ready() -> bool:
 
 
 def ensure_knowledge_base_ready(build_if_missing: bool = False) -> bool:
-    """Verify whether the RAG knowledge base is ready, optionally building it if enabled."""
+    """Verify whether the RAG knowledge base is ready, optionally building it if missing."""
     ready = is_knowledge_base_ready()
     if ready:
         return True
 
-    if build_if_missing and os.getenv("RAG_AUTO_BUILD", "false").lower() in {"1", "true", "yes"}:
+    if build_if_missing:
+        print("[RAG] Knowledge base missing. Starting auto-build...")
         try:
             from .builder import build_knowledge_base
             build_knowledge_base()
-            return is_knowledge_base_ready()
+            if is_knowledge_base_ready():
+                print("[RAG] Knowledge base auto-build completed successfully.")
+                return True
+            print("[RAG] Knowledge base auto-build completed, but the database is still missing.")
         except Exception as e:
             print(f"[RAG] Auto-build failed: {e}")
     return False

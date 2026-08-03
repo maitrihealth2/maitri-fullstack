@@ -26,7 +26,7 @@ try:
     if RAG_AVAILABLE:
         print("[RAG] Knowledge base loaded")
     else:
-        print("[RAG] Not ready — run: python -m rag.knowledge.builder or set RAG_AUTO_BUILD=true")
+        print("[RAG] Knowledge base not ready; falling back to heuristic retrieval.")
 except Exception as e:
     print(f"[RAG] Not available: {e}")
     RAG_AVAILABLE = False
