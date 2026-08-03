@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, Response
+from fastapi import APIRouter, Depends, HTTPException, Response
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from core.exceptions import DomainError, UnauthorizedError, ResourceNotFoundError
 from sqlalchemy.orm import Session
@@ -27,6 +27,27 @@ class TokenResponse(BaseModel):
     access_token: str
     token_type: str = "bearer"
     username: str
+    roles: list[str] = []
+
+
+def parse_roles(roles_value: str | list[str] | None) -> list[str]:
+    if roles_value is None:
+        return []
+    if isinstance(roles_value, list):
+        return [r.strip() for r in roles_value if r.strip()]
+    return [r.strip() for r in roles_value.split(",") if r.strip()]
+
+
+def RoleChecker(allowed_roles: list[str]):
+    def checker(current_user: User = Depends(get_current_user)):
+        user_roles = parse_roles(getattr(current_user, "roles", "user"))
+        if "admin" in user_roles:
+            return current_user
+        if not any(role in user_roles for role in allowed_roles):
+            raise HTTPException(status_code=403, detail="Insufficient permissions for this operation.")
+        return current_user
+    return checker
+
 
 def get_current_user(
     credentials: HTTPAuthorizationCredentials = Depends(bearer),
@@ -64,14 +85,20 @@ async def register(req: RegisterRequest, response: Response, db: Session = Depen
         username=req.username, email=req.email,
         hashed_password="firebase_managed",
         preferred_language=req.preferred_language,
+        roles="user"
     )
     db.add(user); db.commit(); db.refresh(user)
     
-    token = create_access_token({"user_id": user.id, "username": user.username})
-    refresh_token = create_refresh_token({"user_id": user.id, "username": user.username})
+    token_payload = {"user_id": user.id, "username": user.username, "roles": parse_roles(user.roles)}
+    token = create_access_token(token_payload)
+    refresh_token = create_refresh_token(token_payload)
     set_refresh_cookie(response, refresh_token)
     
-    return TokenResponse(access_token=token, username=user.username)
+    return TokenResponse(
+        access_token=token,
+        username=user.username,
+        roles=parse_roles(user.roles),
+    )
 
 @router.post("/login", response_model=TokenResponse)
 async def login(req: LoginRequest, response: Response, db: Session = Depends(get_db)):
@@ -82,11 +109,16 @@ async def login(req: LoginRequest, response: Response, db: Session = Depends(get
     if not user:
         raise UnauthorizedError("Invalid email or password")
         
-    token = create_access_token({"user_id": user.id, "username": user.username})
-    refresh_token = create_refresh_token({"user_id": user.id, "username": user.username})
+    token_payload = {"user_id": user.id, "username": user.username, "roles": parse_roles(user.roles)}
+    token = create_access_token(token_payload)
+    refresh_token = create_refresh_token(token_payload)
     set_refresh_cookie(response, refresh_token)
     
-    return TokenResponse(access_token=token, username=user.username)
+    return TokenResponse(
+        access_token=token,
+        username=user.username,
+        roles=parse_roles(user.roles),
+    )
 
 @router.post("/google", response_model=TokenResponse)
 async def google_login(req: GoogleLoginRequest, response: Response, db: Session = Depends(get_db)):
@@ -127,17 +159,23 @@ async def google_login(req: GoogleLoginRequest, response: Response, db: Session 
                 username=username,
                 email=email,
                 hashed_password="firebase_google_managed",
-                preferred_language="en-IN"
+                preferred_language="en-IN",
+                roles="user"
             )
             db.add(user)
             db.commit()
             db.refresh(user)
             
-        token = create_access_token({"user_id": user.id, "username": user.username})
-        refresh_token = create_refresh_token({"user_id": user.id, "username": user.username})
+        token_payload = {"user_id": user.id, "username": user.username, "roles": parse_roles(user.roles)}
+        token = create_access_token(token_payload)
+        refresh_token = create_refresh_token(token_payload)
         set_refresh_cookie(response, refresh_token)
         
-        return TokenResponse(access_token=token, username=user.username)
+        return TokenResponse(
+            access_token=token,
+            username=user.username,
+            roles=parse_roles(user.roles),
+        )
 
 @router.post("/refresh", response_model=TokenResponse)
 def refresh_access_token(request: __import__('fastapi').Request, db: Session = Depends(get_db)):
@@ -153,8 +191,16 @@ def refresh_access_token(request: __import__('fastapi').Request, db: Session = D
     if not user:
         raise UnauthorizedError("User not found")
         
-    new_token = create_access_token({"user_id": user.id, "username": user.username})
-    return TokenResponse(access_token=new_token, username=user.username)
+    new_token = create_access_token({
+        "user_id": user.id,
+        "username": user.username,
+        "roles": parse_roles(user.roles),
+    })
+    return TokenResponse(
+        access_token=new_token,
+        username=user.username,
+        roles=parse_roles(user.roles),
+    )
 
 @router.post("/logout")
 def logout(response: Response):
@@ -163,4 +209,14 @@ def logout(response: Response):
 
 @router.get("/me")
 def get_me(current_user: User = Depends(get_current_user)):
-    return {"id": current_user.id, "username": current_user.username, "email": current_user.email, "preferred_language": current_user.preferred_language}
+    return {
+        "id": current_user.id,
+        "username": current_user.username,
+        "email": current_user.email,
+        "preferred_language": current_user.preferred_language,
+        "roles": parse_roles(getattr(current_user, "roles", "user")),
+    }
+
+@router.get("/admin/check")
+def admin_check(current_user: User = Depends(RoleChecker(["admin"]))):
+    return {"status": "ok", "message": "Admin access granted", "user": current_user.username}

@@ -56,6 +56,7 @@ class User(Base):
     preferred_language = Column(String(10), default="en-IN", comment="Language code like en-IN, hi-IN, te-IN, ta-IN")
     created_at = Column(DateTime(timezone=True), default=func.now(), comment="When the user account was created")
     updated_at = Column(DateTime(timezone=True), default=func.now(), onupdate=func.now(), comment="Last modification timestamp")
+    roles = Column(String(100), default="user", nullable=False, comment="Comma-separated roles assigned to the user")
     is_active = Column(Boolean, default=True)
 
     # Relationships

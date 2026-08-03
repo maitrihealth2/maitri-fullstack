@@ -18,7 +18,7 @@ RUN uv pip install --system --no-cache torch torchvision torchaudio --index-url 
 
 COPY requirements.txt .
 # Use uv for extremely fast package resolution and installation
-RUN uv pip install --system --no-cache -r requirements.txt --extra-index-url https://download.pytorch.org/whl/cpu
+RUN uv pip install --system --no-cache -r requirements.txt
 
 # Pre-download NLTK data required by rouge-score / tokenizers
 RUN python -c "import nltk; nltk.download('punkt'); nltk.download('punkt_tab')"
