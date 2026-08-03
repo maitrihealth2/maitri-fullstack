@@ -25,7 +25,7 @@ export function FeatureFlagProvider({ children }: { children: React.ReactNode })
           setLoading(false)
           return
         }
-        const API_URL = (process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8000').replace(/\/$/, '')
+        const API_URL = (process.env.NEXT_PUBLIC_API_URL ?? 'https://maitri-fullstack-1.onrender.com').replace(/\/$/, '')
         const res = await fetch(`${API_URL}/api/features/my-flags`, {
           headers: { Authorization: `Bearer ${token}` }
         })

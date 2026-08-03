@@ -4,7 +4,7 @@ import { useEffect } from 'react'
 import { ThemeProvider } from 'next-themes'
 import { FeatureFlagProvider } from '@/shared/components/contexts/FeatureFlagContext'
 
-const API_URL = (process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8000').replace(/\/$/, '')
+const API_URL = (process.env.NEXT_PUBLIC_API_URL ?? 'https://maitri-fullstack-1.onrender.com').replace(/\/$/, '')
 
 export function Providers({ children }: { children: React.ReactNode }) {
   useEffect(() => {

@@ -45,7 +45,7 @@ pip install -r requirements.txt
 
 ### 2. Frontend (`frontend/.env.local`)
 ```properties
-NEXT_PUBLIC_API_URL=http://localhost:8000
+NEXT_PUBLIC_API_URL=https://maitri-fullstack-1.onrender.com
 NEXT_PUBLIC_FIREBASE_API_KEY=your_firebase_key
 # Other Firebase variables as needed
 ```
@@ -68,15 +68,15 @@ cd backend
 .\venv\Scripts\activate
 python run_dev.py
 ```
-*Access:* The backend API and Swagger Docs run on **http://localhost:8000/docs**
+*Access:* The backend API and Swagger Docs run on **https://maitri-fullstack-1.onrender.com/docs**
 
 **Terminal 2 — Frontend:**
 ```powershell
 cd frontend
 npm run dev
 ```
-*Access:* The Next.js web application is available at **http://localhost:3000**
-*Telemetry UI:* The live visualization dashboard is at **http://localhost:3000/telemetry.html**
+*Access:* The Next.js web application is available at **https://maitri-fullstack-1.onrender.com**
+*Telemetry UI:* The live visualization dashboard is at **https://maitri-fullstack-1.onrender.com/telemetry.html**
 
 ---
 

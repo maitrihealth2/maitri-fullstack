@@ -119,9 +119,7 @@ app = FastAPI(
 
 cors_origins_env = os.getenv("CORS_ORIGINS", "")
 allowed_origins = [
-    "http://localhost:3000",
-    "http://localhost:3001",
-    "http://127.0.0.1:3000",
+    "https://maitri-fullstack-1.onrender.com",
 ]
 if cors_origins_env:
     allowed_origins.extend([o.strip() for o in cors_origins_env.split(",") if o.strip()])
@@ -129,14 +127,14 @@ if cors_origins_env:
 app.add_middleware(
     CORSMiddleware,
     allow_origins=allowed_origins,
-    allow_origin_regex=r"https://.*\.onrender\.com|https://.*\.vercel\.app|http://(localhost|127\.0\.0\.1|192\.168\.\d+\.\d+|10\.\d+\.\d+\.\d+):\d+",
+    allow_origin_regex=r"https://.*\.(onrender\.com|vercel\.app)",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
 from fastapi.middleware.trustedhost import TrustedHostMiddleware
-app.add_middleware(TrustedHostMiddleware, allowed_hosts=["localhost", "127.0.0.1", "*.pinggy.link", "*.vercel.app", "*.onrender.com"])
+app.add_middleware(TrustedHostMiddleware, allowed_hosts=["maitri-fullstack-1.onrender.com", "*.onrender.com", "*.vercel.app"])
 
 from core.middleware.security import SecurityMiddleware
 app.add_middleware(SecurityMiddleware, max_payload_bytes=10 * 1024 * 1024)
