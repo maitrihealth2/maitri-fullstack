@@ -8,7 +8,6 @@ load_dotenv(_BACKEND_DIR / ".env.local", override=True)
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from starlette.middleware.proxy_headers import ProxyHeadersMiddleware
 from contextlib import asynccontextmanager
 import traceback
 from fastapi.responses import JSONResponse
@@ -116,7 +115,6 @@ app.add_middleware(
 )
 
 from fastapi.middleware.trustedhost import TrustedHostMiddleware
-app.add_middleware(ProxyHeadersMiddleware, trusted_hosts="*")
 app.add_middleware(TrustedHostMiddleware, allowed_hosts=["localhost", "127.0.0.1", "*.pinggy.link", "*.vercel.app", "*.onrender.com"])
 
 from core.middleware.security import SecurityMiddleware
